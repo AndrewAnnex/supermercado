@@ -3,10 +3,11 @@ import numpy as np
 
 from supermercado import super_utils as sutils
 from rasterio import features, Affine
-import mercantile
+
+from morecantile import TileMatrixSet, tms
 
 
-def union(inputtiles, parsenames):
+def union(inputtiles, parsenames, t: TileMatrixSet = tms.get("WebMercatorQuad")):
 
     tiles = sutils.tile_parser(inputtiles, parsenames)
 
@@ -17,9 +18,9 @@ def union(inputtiles, parsenames):
     # make an array of shape (xrange + 3, yrange + 3)
     burn = sutils.burnXYZs(tiles, xmin, xmax, ymin, ymax, 0)
 
-    nw = mercantile.xy(*mercantile.ul(xmin, ymin, zoom))
+    nw = t.xy(*t.ul(xmin, ymin, zoom))
 
-    se = mercantile.xy(*mercantile.ul(xmax + 1, ymax + 1, zoom))
+    se = t.xy(*t.ul(xmax + 1, ymax + 1, zoom))
 
     aff = Affine(
         ((se[0] - nw[0]) / float(xmax - xmin + 1)),
@@ -30,7 +31,7 @@ def union(inputtiles, parsenames):
         nw[1],
     )
 
-    unprojecter = sutils.Unprojecter()
+    unprojecter = sutils.Unprojecter(t=t)
 
     unionedTiles = [
         {

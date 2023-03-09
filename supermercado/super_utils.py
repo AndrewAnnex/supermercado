@@ -1,7 +1,9 @@
 import json
 import re
 
+from morecantile import TileMatrixSet, tms
 import numpy as np
+from pyproj import Transformer
 
 
 def parseString(tilestring, matcher):
@@ -84,18 +86,21 @@ def filter_features(features):
 
 
 class Unprojecter:
-    def __init__(self):
+    def __init__(self, t: TileMatrixSet = tms.get("WebMercatorQuad")):
         self.R2D = 180 / np.pi
-        self.A = 6378137.0
+        self.A = t.crs.ellipsoid.semi_major_metre
+        self.crs = t.crs
+        self.gcrs = t.crs.geodetic_crs
+        self.transformer = Transformer.from_crs(self.crs, self.gcrs)
 
-    def xy_to_lng_lat(self, coordinates):
+    def xy_to_lng_lat(self, coordinates) -> list:
+        # todo replace with pyproj
+        # okay either I am given a list of list or a list of vertices
         for c in coordinates:
             tc = np.array(c)
             yield np.dstack(
                 [
-                    tc[:, 0] * self.R2D / self.A,
-                    ((np.pi * 0.5) - 2.0 * np.arctan(np.exp(-tc[:, 1] / self.A)))
-                    * self.R2D,
+                    *self.transformer.transform(tc[:, 0], tc[:, 1]) 
                 ]
             )[0].tolist()
 

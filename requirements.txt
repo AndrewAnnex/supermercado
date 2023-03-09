@@ -2,6 +2,6 @@ affine
 click
 click-plugins
 cligj
-mercantile
+morecantile
 numpy
 rasterio
